@@ -99,8 +99,10 @@ class MolecularDataModule(LightningDataModule):
             pin_memory=True,
         )
     
-    def get_train_labels(self):
-        targets = self.train_dataset.data.targets
+    def get_train_labels_ratio(self):
+        if self.train_dataset is None:
+            self.setup("fit")
+        targets = self.train_dataset.target
         num_pos = targets.sum().item()
         num_neg = len(targets) - num_pos
         return torch.tensor([num_neg, num_pos])

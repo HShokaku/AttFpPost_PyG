@@ -10,7 +10,7 @@ class LigandSimpleFeaturization:
 
     def __call__(self, row: pd.Series) -> Data:
         data = from_smiles(row["smiles"])
-        data["target"] = torch.tensor(row["Y"], dtype=torch.int)
+        data["target"] = torch.tensor(row["Y"], dtype=torch.long)
 
         return data
 

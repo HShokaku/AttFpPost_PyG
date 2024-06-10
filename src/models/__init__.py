@@ -1,0 +1,1 @@
+from src.models.lightning import MoleculeBinaryClassifier

@@ -19,11 +19,11 @@ class AttentiveFpPost(nn.Module):
         # number of samples per class: torch.Tensor([N_0, N_1])
         N: Tensor,
         # Parameters for Attentive FP Encoder
-        num_atom_feats: int = 10,
-        num_bond_feats: int = 5,
+        num_atom_feats: int = 9,
+        num_bond_feats: int = 3,
         hidden_features: int = 256,
         num_layers: int = 3,
-        T: int = 2,
+        num_timesteps: int = 2,
         dropout: float = 0.1,
         n_ffn_layers: int = 3,
         # Parameters for the Normalizing Flow
@@ -40,7 +40,7 @@ class AttentiveFpPost(nn.Module):
             out_channels=hidden_features,
             edge_dim=num_bond_feats,
             num_layers=num_layers,
-            num_timesteps=T,
+            num_timesteps=num_timesteps,
             dropout=dropout,
         )
         # create feed-forward network
@@ -69,26 +69,26 @@ class AttentiveFpPost(nn.Module):
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
-        self.ffn.reset_parameters()
-        for density in self.density_estimation:
-            density.reset_parameters()
+        for module in self.ffn:
+            if hasattr(module, 'reset_parameters'):
+                module.reset_parameters()
         self.batch_norm.reset_parameters()
 
     def forward(self, x: DataBatch, targets: Tensor):
         alpha, preds = self._forward(x)
-        targets_hot = F.one_hot(targets, num_classes=2).squeeze(1)
+        targets_hot = F.one_hot(targets, num_classes=2)
         loss = self.UCE_loss(alpha, targets_hot)
-        return preds, loss
+        return loss, preds[:, 1] 
     
     @torch.no_grad()
     def predict(self, x: DataBatch):
         alpha, preds = self._forward(x)
-        return alpha, preds
+        return alpha, preds[:, 1] 
 
     def _forward(self, x: DataBatch):
-        device = x.device
+        device = x.x.device
         z = self.encoder(
-            x.x, 
+            x.x.float(), 
             x.edge_index, 
             x.edge_attr, 
             x.batch
