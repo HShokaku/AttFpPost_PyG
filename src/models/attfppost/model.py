@@ -20,8 +20,8 @@ class AttentiveFpPost(nn.Module):
         N: Tensor,
         # Parameters for Attentive FP Encoder
         num_atom_feats: int = 10,
-        hidden_dim: int = 256,
-        num_edge_feats: int = 5,
+        num_bond_feats: int = 5,
+        hidden_features: int = 256,
         num_layers: int = 3,
         T: int = 2,
         dropout: float = 0.1,
@@ -36,25 +36,25 @@ class AttentiveFpPost(nn.Module):
         # create encoder
         self.encoder = AttentiveFP(
             in_channels=num_atom_feats,
-            hidden_channels=hidden_dim,
-            out_channels=hidden_dim,
-            edge_dim=num_edge_feats,
+            hidden_channels=hidden_features,
+            out_channels=hidden_features,
+            edge_dim=num_bond_feats,
             num_layers=num_layers,
             num_timesteps=T,
             dropout=dropout,
         )
         # create feed-forward network
-        ffn = [nn.Linear(hidden_dim, hidden_dim)]
+        ffn = [nn.Linear(hidden_features, hidden_features)]
         for _ in range(n_ffn_layers - 2):
             ffn.extend([
                 nn.ReLU(),
                 nn.Dropout(dropout),
-                nn.Linear(hidden_dim, hidden_dim),
+                nn.Linear(hidden_features, hidden_features),
             ])
         ffn.extend([
             nn.ReLU(), 
             nn.Dropout(dropout), 
-            nn.Linear(hidden_dim, latent_dim)
+            nn.Linear(hidden_features, latent_dim)
         ])
         self.ffn = nn.Sequential(*ffn)
         # create Normalizing Flow
